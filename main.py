@@ -21,7 +21,7 @@ def filter_by_href_and_file_type(array_tags):
         text = tag.text.upper()
         if href_pattern in href and any(file_type in text for file_type in file_types):
             final_set.add(tag)
-    return final_set
+    return list(final_set)
 
 
 # def download_file(url, path_to_save, file_type)
@@ -65,25 +65,26 @@ def download_zip(zip_url, path_to_save):
 
 def iterate_through_web(base_url, content_type, qty_pages):
     url_first_page = f'{base_url}?type={content_type}'
-    set_of_tags = set()
+    list_of_tags = []
     if qty_pages == 0:
         a_tags_page = get_all_a_tags(url_first_page)
-        set_of_tags.update(filter_by_href_and_file_type(a_tags_page))
-        print(f'In {content_type}, downloaded {len(set_of_tags)} files')
+        list_of_tags.extend(filter_by_href_and_file_type(a_tags_page))
+        for tag in list_of_tags:
+            print(f'.{tag.getText().split()[0].lower()}')
+        print(f'In {content_type}, downloaded {len(list_of_tags)} files')
     else:
         for num_of_page in range(1, qty_pages + 1):
             pagination_url = f'{url_first_page}&pg={num_of_page}'
-            tags_bef = len(set_of_tags)
-            set_of_tags.update(filter_by_href_and_file_type(get_all_a_tags(pagination_url)))
-            tags_aft = len(set_of_tags)
-            print(f'In {content_type} page {num_of_page}, downloaded {tags_aft - tags_bef} files')
-    return set_of_tags
+            tags_bef = len(list_of_tags)
+            list_of_tags.extend(filter_by_href_and_file_type(get_all_a_tags(pagination_url)))
+            for tag in list_of_tags:
+                print(f'.{tag.getText().split()[0].lower()}')
+            print(f'In {content_type} page {num_of_page}, downloaded {len(list_of_tags) - tags_bef} files')
 
 
 if __name__ == '__main__':
     fermax_url = 'https://www.fermax.com/spain/documentacion/documentacion-tecnica'
     desktop_path = os.path.join(os.path.expanduser('~'), 'Desktop/fermax')
-    links = set()
 
     menu_contents = [
         ['handbooks', 46],
@@ -95,6 +96,4 @@ if __name__ == '__main__':
     ]
 
     for menu_item in menu_contents:
-        links.update(iterate_through_web(fermax_url, menu_item[0], menu_item[1]))
-
-    print(list(links))
+        iterate_through_web(fermax_url, menu_item[0], menu_item[1])
