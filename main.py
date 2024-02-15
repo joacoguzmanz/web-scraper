@@ -24,53 +24,29 @@ def filter_by_href_and_file_type(array_tags):
     return list(final_set)
 
 
-# def download_file(url, path_to_save, file_type)
-
-
-def download_pdf(pdf_url, path_to_save):
-    response = requests.get(pdf_url, stream=True)
+def download_file(url_download, path_to_save, type_of_file):
+    response = requests.get(url_download, stream=True)
     if response.status_code == 200:
-        file_name = pdf_url.split('slug=')[-1][:-8] + '.pdf'
+        file_name = url_download.split('slug=')[-1][:-8] + type_of_file
         file_path = os.path.join(path_to_save, file_name)
         with open(file_path, 'wb') as file:
             file.write(response.content)
-        print(f'PDF saved to: {file_path}')
+        print(f'{file_name} saved to: {file_path}')
     else:
-        print(f'Failed to download PDF from: {pdf_url}')
-
-
-def download_excel(excel_url, path_to_save):
-    response = requests.get(excel_url, stream=True)
-    if response.status_code == 200:
-        file_name = excel_url.split('slug=')[-1][:-8] + '.xlsx'
-        file_path = os.path.join(path_to_save, file_name)
-        with open(file_path, 'wb') as file:
-            file.write(response.content)
-        print(f'Excel saved to: {file_path}')
-    else:
-        print(f'Failed to download Excel from: {excel_url}')
-
-
-def download_zip(zip_url, path_to_save):
-    response = requests.get(zip_url, stream=True)
-    if response.status_code == 200:
-        file_name = zip_url.split('slug=')[-1][:-8] + '.zip'
-        file_path = os.path.join(path_to_save, file_name)
-        with open(file_path, 'wb') as file:
-            file.write(response.content)
-        print(f'ZIP saved to: {file_path}')
-    else:
-        print(f'Failed to download ZIP from: {zip_url}')
+        print(f'Failed to download file from: {url_download}')
 
 
 def iterate_through_web(base_url, content_type, qty_pages):
+    fermax_path_dir = os.path.join(os.path.expanduser('~'), 'Desktop/fermax')
     url_first_page = f'{base_url}?type={content_type}'
     list_of_tags = []
     if qty_pages == 0:
         a_tags_page = get_all_a_tags(url_first_page)
         list_of_tags.extend(filter_by_href_and_file_type(a_tags_page))
         for tag in list_of_tags:
-            print(f'.{tag.getText().split()[0].lower()}')
+            file_extension = f'.{tag.getText().split()[0].lower()}'
+            href = tag.get('href')
+            download_file(href, fermax_path_dir, file_extension)
         print(f'In {content_type}, downloaded {len(list_of_tags)} files')
     else:
         for num_of_page in range(1, qty_pages + 1):
@@ -78,13 +54,14 @@ def iterate_through_web(base_url, content_type, qty_pages):
             tags_bef = len(list_of_tags)
             list_of_tags.extend(filter_by_href_and_file_type(get_all_a_tags(pagination_url)))
             for tag in list_of_tags:
-                print(f'.{tag.getText().split()[0].lower()}')
+                file_extension = f'.{tag.getText().split()[0].lower()}'
+                href = tag.get('href')
+                download_file(href, fermax_path_dir, file_extension)
             print(f'In {content_type} page {num_of_page}, downloaded {len(list_of_tags) - tags_bef} files')
 
 
 if __name__ == '__main__':
     fermax_url = 'https://www.fermax.com/spain/documentacion/documentacion-tecnica'
-    desktop_path = os.path.join(os.path.expanduser('~'), 'Desktop/fermax')
 
     menu_contents = [
         ['handbooks', 46],
