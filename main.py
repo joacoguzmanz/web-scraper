@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import requests
 import os
 from pdfminer.high_level import extract_text
+import tiktoken
 import fitz  # PyMuPDF
 import PIL.Image  # pillow
 import tabula
@@ -67,12 +68,32 @@ def iterate_through_web(base_url, content_type, qty_pages):
             print(f'In {content_type} page {num_of_page}, downloaded {len(list_of_tags) - tags_bef} files')
 
 
+# clean up text
+def sanitize_text(pdf_text):
+    sanitized_lines = []
+    for line in pdf_text.split('\n'):
+        words = line.split()
+        stripped_line = ' '.join(words)
+        if stripped_line:
+            sanitized_lines.append(stripped_line)
+    sanitized_text = '\n'.join(sanitized_lines)
+    return sanitized_text
+
+
+# get quantity of tokens in pdf
+def get_tokens_qty(text_from_pdf: str) -> int:
+    encoding = tiktoken.get_encoding('cl100k_base')
+    qty_tokens = len(encoding.encode(text_from_pdf))
+    return qty_tokens
+
+
 # TODO functions for extracting data
 
 
 if __name__ == '__main__':
     fermax_url = 'https://www.fermax.com/spain/documentacion/documentacion-tecnica'
-    test_fermax_pdf = "/Users/joaquinguzman/Downloads/97865LECTORPROXIMIDADMINIWGREF5277V0917.pdf"
+    test_fermax_img = '/Users/joaquinguzman/Downloads/fermax-pdf-images.pdf'
+    test_fermax_text = '/Users/joaquinguzman/Downloads/fermax-pdf-testing.pdf'
 
     menu_contents = [
         ['handbooks', 46],
@@ -84,27 +105,28 @@ if __name__ == '__main__':
     ]
 
     # extract all text
-    text = extract_text(test_fermax_pdf)
-    print(text)
+    text = extract_text(test_fermax_text)
+    # print(sanitize_text(text))
+    print(get_tokens_qty(sanitize_text(text)))
 
     # extract tables as pandas
-    tables = tabula.read_pdf(test_fermax_pdf, pages="all")
-    print(tables)
+    # tables = tabula.read_pdf(test_fermax_pdf, pages="all")
+    # print(tables)
 
     # extract all images
-    pdf = fitz.open(test_fermax_pdf)
-    counter = 1
-    for i in range(len(pdf)):
-        page = pdf[i]
-        images = page.get_images()
-        for image in images:
-            base_img = pdf.extract_image(image[0])
-            image_data = base_img["image"]
-            img = PIL.Image.open(io.BytesIO(image_data))
-            extension = base_img["ext"]
-            img.save(open(f"image{counter}.{extension}", "wb"))
-            counter += 1
+    # pdf = fitz.open(test_fermax_pdf)
+    # counter = 1
+    # for i in range(len(pdf)):
+    #     page = pdf[i]
+    #     images = page.get_images()
+    #     for image in images:
+    #         base_img = pdf.extract_image(image[0])
+    #         image_data = base_img["image"]
+    #         img = PIL.Image.open(io.BytesIO(image_data))
+    #         extension = base_img["ext"]
+    #         img.save(open(f"image{counter}.{extension}", "wb"))
+    #         counter += 1
 
     # download all pdfs from website
-    for menu_item in menu_contents:
-        iterate_through_web(fermax_url, menu_item[0], menu_item[1])
+    # for menu_item in menu_contents:
+    #     iterate_through_web(fermax_url, menu_item[0], menu_item[1])
