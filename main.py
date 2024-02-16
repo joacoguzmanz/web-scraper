@@ -1,6 +1,11 @@
+import io
 from bs4 import BeautifulSoup
 import requests
 import os
+from pdfminer.high_level import extract_text
+import fitz  # PyMuPDF
+import PIL.Image  # pillow
+import tabula
 
 
 # gets all a tags from a page
@@ -24,6 +29,7 @@ def filter_by_href_and_file_type(array_tags):
     return list(final_set)
 
 
+# download file with extension
 def download_file(url_download, path_to_save, type_of_file):
     response = requests.get(url_download, stream=True)
     if response.status_code == 200:
@@ -36,6 +42,7 @@ def download_file(url_download, path_to_save, type_of_file):
         print(f'Failed to download file from: {url_download}')
 
 
+# iterate through pages in web and download files
 def iterate_through_web(base_url, content_type, qty_pages):
     fermax_path_dir = os.path.join(os.path.expanduser('~'), 'Desktop/fermax')
     url_first_page = f'{base_url}?type={content_type}'
@@ -60,8 +67,12 @@ def iterate_through_web(base_url, content_type, qty_pages):
             print(f'In {content_type} page {num_of_page}, downloaded {len(list_of_tags) - tags_bef} files')
 
 
+# TODO functions for extracting data
+
+
 if __name__ == '__main__':
     fermax_url = 'https://www.fermax.com/spain/documentacion/documentacion-tecnica'
+    test_fermax_pdf = "/Users/joaquinguzman/Downloads/97865LECTORPROXIMIDADMINIWGREF5277V0917.pdf"
 
     menu_contents = [
         ['handbooks', 46],
@@ -72,5 +83,28 @@ if __name__ == '__main__':
         ['versiones_eq', 0]
     ]
 
+    # extract all text
+    text = extract_text(test_fermax_pdf)
+    print(text)
+
+    # extract tables as pandas
+    tables = tabula.read_pdf(test_fermax_pdf, pages="all")
+    print(tables)
+
+    # extract all images
+    pdf = fitz.open(test_fermax_pdf)
+    counter = 1
+    for i in range(len(pdf)):
+        page = pdf[i]
+        images = page.get_images()
+        for image in images:
+            base_img = pdf.extract_image(image[0])
+            image_data = base_img["image"]
+            img = PIL.Image.open(io.BytesIO(image_data))
+            extension = base_img["ext"]
+            img.save(open(f"image{counter}.{extension}", "wb"))
+            counter += 1
+
+    # download all pdfs from website
     for menu_item in menu_contents:
         iterate_through_web(fermax_url, menu_item[0], menu_item[1])
