@@ -4,6 +4,8 @@ import requests
 import os
 from pdfminer.high_level import extract_text
 import tiktoken
+import json
+from unidecode import unidecode
 import fitz  # PyMuPDF
 import PIL.Image  # pillow
 import tabula
@@ -87,13 +89,31 @@ def get_tokens_qty(text_from_pdf: str) -> int:
     return qty_tokens
 
 
-# TODO functions for extracting data
+def save_text_to_json(text_to_save, json_path):
+    data = {
+        "doc1": {
+            "title": "fermax-1",
+            "content": text_to_save
+        },
+        "doc2": {
+            "title": "fermax-2",
+            "content": text_to_save
+        }
+    }
+
+    # Open the file in write mode and save the data as JSON
+    with open(json_path, "w") as json_file:
+        json.dump(data, json_file)
+
+
+# TODO function to iterate and add to JSON
 
 
 if __name__ == '__main__':
     fermax_url = 'https://www.fermax.com/spain/documentacion/documentacion-tecnica'
     test_fermax_img = '/Users/joaquinguzman/Downloads/fermax-pdf-images.pdf'
     test_fermax_text = '/Users/joaquinguzman/Downloads/fermax-pdf-testing.pdf'
+    fermax_path_test = os.path.join(os.path.expanduser('~'), 'Desktop/fermax/')
 
     menu_contents = [
         ['handbooks', 46],
@@ -105,28 +125,15 @@ if __name__ == '__main__':
     ]
 
     # extract all text
-    text = extract_text(test_fermax_text)
-    # print(sanitize_text(text))
-    print(get_tokens_qty(sanitize_text(text)))
+    text = extract_text(test_fermax_img)
+    before = get_tokens_qty(text)
+    final_text = sanitize_text(text)
+    after = get_tokens_qty(final_text)
 
-    # extract tables as pandas
-    # tables = tabula.read_pdf(test_fermax_pdf, pages="all")
-    # print(tables)
+    print(f'Qty of tokens straight from the pdf: {before}')
+    print(f'Qty of tokens after clean up: {after}')
+    print(f'Tokens difference: {before - after}')
 
-    # extract all images
-    # pdf = fitz.open(test_fermax_pdf)
-    # counter = 1
-    # for i in range(len(pdf)):
-    #     page = pdf[i]
-    #     images = page.get_images()
-    #     for image in images:
-    #         base_img = pdf.extract_image(image[0])
-    #         image_data = base_img["image"]
-    #         img = PIL.Image.open(io.BytesIO(image_data))
-    #         extension = base_img["ext"]
-    #         img.save(open(f"image{counter}.{extension}", "wb"))
-    #         counter += 1
-
-    # download all pdfs from website
-    # for menu_item in menu_contents:
-    #     iterate_through_web(fermax_url, menu_item[0], menu_item[1])
+    # Example usage:
+    file_path = "fermax-data.json"
+    save_text_to_json(final_text, os.path.join(fermax_path_test, file_path))
