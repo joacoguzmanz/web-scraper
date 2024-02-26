@@ -79,7 +79,6 @@ def iterate_v2(base_url, content_type, qty_pages):
         for num_of_page in range(1, qty_pages + 1):
             pagination_url = f'{url_first_page}&pg={num_of_page}'
             list_of_tags = filter_by_href_and_file_type(get_all_a_tags(pagination_url))
-            # tags_bef = len(list_of_tags)
             for tag in list_of_tags:
                 file_extension = f'.{tag.getText().split()[0].lower()}'
                 href = tag.get('href')
