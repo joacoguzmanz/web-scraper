@@ -1,11 +1,10 @@
 import os
+import re
+
 import tiktoken
 import json
 from pdfminer.high_level import extract_text
 from PyPDF2 import PdfReader
-# import fitz  # PyMuPDF
-# import PIL.Image  # pillow
-# import tabula
 
 
 # clean up text
@@ -74,3 +73,23 @@ def process_files(directory_path, json_path):
                 save_text_to_json(text, title, tokens, json_path)
             else:
                 print(f'Invalid PDF {filename}')
+
+
+def remove_cid(text):
+    cid_regex = re.compile(r'\(cid:\d+\)')
+    clean_text = cid_regex.sub('', text)
+    return clean_text
+
+
+def clean_json(json_file):
+    with open(json_file, 'r') as f:
+        data = json.load(f)
+
+    for key, value in data.items():
+        if 'content' in value:
+            cleaned_content = remove_cid(value['content'])
+            value['content'] = cleaned_content
+            data[key] = value
+
+    with open(json_file, 'w') as f:
+        json.dump(data, f, indent=4)
